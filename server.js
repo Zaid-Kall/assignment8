@@ -9,6 +9,15 @@ const courses = [
   { id: 3, title: "Software Engineering", credits: 5 },
 ];
 
+// Request logger: prints one line per request, then passes control on
+function requestLogger(req, res, next) {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
+  next();
+}
+
+app.use(requestLogger);
+
 app.get("/hello", (req, res) => {
   res.type("text/plain").send("Hello from Zaid's server");
 });
