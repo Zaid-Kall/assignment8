@@ -9,6 +9,8 @@ const courses = [
   { id: 3, title: "Software Engineering", credits: 5 },
 ];
 
+let requestsServed = 0;
+
 // Request logger: prints one line per request, then passes control on
 function requestLogger(req, res, next) {
   const timestamp = new Date().toISOString();
@@ -16,7 +18,14 @@ function requestLogger(req, res, next) {
   next();
 }
 
+// Request counter: counts every request that reaches the server
+function requestCounter(req, res, next) {
+  requestsServed += 1;
+  next();
+}
+
 app.use(requestLogger);
+app.use(requestCounter);
 
 app.get("/hello", (req, res) => {
   res.type("text/plain").send("Hello from Zaid's server");
@@ -55,6 +64,10 @@ app.post("/api/subscribe", (req, res) => {
 
 app.get("/api/admin", (req, res) => {
   res.status(403).json({ error: "Forbidden" });
+});
+
+app.get("/api/stats", (req, res) => {
+  res.json({ requestsServed });
 });
 
 app.listen(PORT, () => {
