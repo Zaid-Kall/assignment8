@@ -1,7 +1,11 @@
 import express from "express";
+import path from "node:path";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Absolute path, so the server works no matter which folder it is started from
+const publicDir = path.join(import.meta.dirname, "public");
 
 const courses = [
   { id: 1, title: "Web Programming", credits: 6 },
@@ -26,6 +30,9 @@ function requestCounter(req, res, next) {
 
 app.use(requestLogger);
 app.use(requestCounter);
+
+// Static files: serves public/index.html at "/" and the css and js files
+app.use(express.static(publicDir));
 
 app.get("/hello", (req, res) => {
   res.type("text/plain").send("Hello from Zaid's server");
