@@ -70,6 +70,15 @@ app.get("/api/stats", (req, res) => {
   res.json({ requestsServed });
 });
 
+// 404 fallback: must stay LAST, so it never hides a real route
+app.use((req, res) => {
+  if (req.path.startsWith("/api")) {
+    res.status(404).json({ error: "Not found" });
+  } else {
+    res.status(404).send("<h1>404</h1><p>Page not found.</p>");
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
