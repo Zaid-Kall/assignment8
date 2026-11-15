@@ -137,3 +137,48 @@ Keep-Alive: timeout=5
 
 <h1>404</h1><p>Page not found.</p>
 ```
+## Reasoning questions
+
+### 1. Route order
+
+I moved the 404 fallback to the top of server.js. After that, every URL returned 404, even real routes like /hello and /api/courses, and the logger printed nothing. Express checks middleware and routes in the order they were registered. The fallback matches every request and answers it without calling next(), so the request never reached the logger or any real route. This is why the fallback must be registered last.
+
+### 2. Middleware
+
+I removed next() from the logger. The browser kept loading with the spinner and never showed the page. The server printed one log line for GET /hello, but nothing else happened. Because the logger did not call next() and did not send a response, Express never moved on to the next middleware or to the route, so the request hung until it was cancelled.
+
+### 3. Status codes
+
+POST /api/subscribe answers 201 because the request creates something new (a subscription), and 201 Created tells the client that, while 200 only says that the request worked. A missing page is a 404 and not a 200 with an error message because the status code is what browsers, search engines and API clients read first. A 200 would tell them the page exists, even if the body says otherwise.
+
+### 4. Configuration
+
+The server reads its port from process.env.PORT so the port can change without editing the code. Hosting platforms and other developers often have 3000 already in use, or they assign the port themselves through an environment variable. The fallback to 3000 keeps the server easy to run locally.
+
+### 5. Dependencies
+
+node_modules is not committed because it is large, it is generated from package.json and package-lock.json, and it can differ between operating systems. After cloning the repository, a teammate must run npm install to download the packages, and then npm start (or npm run dev) to start the server.
+
+### 6. Same origin
+
+If the page were opened directly from disk, it would load from a file:// address, and the relative URLs like /api/courses would not point to my server. Calling the server by its full address from that page would be a cross-origin request, and the browser blocks it by default. This restriction is called the same-origin policy, and the server would need to allow the request with CORS headers.
+
+## Self-study notes
+
+- **Node version and running time:** the process object has process.version for the Node version and process.uptime() for the seconds since the process started. I used Math.floor() so uptimeSeconds is a whole number.
+- **Plain text content type:** res.type("text/plain") sets the Content-Type header before res.send(), otherwise Express sends a string as text/html. I used it for /hello and /robots.txt.
+- **Showing JSON neatly:** in the browser page I used JSON.stringify(data, null, 2), where 2 is the indentation, and I show the result inside a pre element.
+- **Server working from any folder:** I build the path of the public folder with path.join(import.meta.dirname, "public"), so it does not depend on the folder where the server is started.
+
+## Which requests are counted
+
+The counter middleware counts every request that reaches the server: normal routes, redirects, static files, 404 responses, and requests to /api/stats itself. I placed the logger and the counter before the routes and before express.static, because Express runs middleware in the order it is registered. If they were placed after the routes, a request that was already answered would never reach them.
+
+## Challenges
+
+- **Git setup:** my local branch was called master after git init, and I renamed it to main before the first push.
+- **Two terminals:** the dev server keeps the terminal busy, so I needed a second terminal for git and curl commands.
+- **Windows curl:** in PowerShell, curl is an alias for another command, so I had to use curl.exe.
+- **Leftover port variable:** after I tested PORT=4000, the variable stayed in that terminal session, and the server kept running on 4000 instead of 3000.
+- **Request counter:** the counter showed a higher number than my clicks. I found out that the browser also asks for /favicon.ico, and the counter counts that request too.
+- **Writing the curl evidence:** my first attempt to write the output into the README failed, so I wrote the file in one step with a script.
